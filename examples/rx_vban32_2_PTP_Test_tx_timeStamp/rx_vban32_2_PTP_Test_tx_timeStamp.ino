@@ -1,5 +1,4 @@
 #include <Audio.h>
-#include <t41-ptp.h>
 
 #ifdef HAVE_AUDIO_BOARD
   #include <Wire.h>
@@ -19,12 +18,6 @@ EthernetUDP ptpUdp;
 
 // Timer IEEE1588
 elapsedMillis timerPrint1588;
-
-
-byte mac[6];
-IPAddress staticIP{192, 168, 0, 210};
-IPAddress subnetMask{255, 255, 255, 0};
-IPAddress gateway{192, 168, 0, 6};
 
 void checkPTP() {
   int packetSize = ptpUdp.parsePacket();
@@ -78,11 +71,13 @@ AudioControlSGTL5000 sgtl;
 
 #include "utils.h"
 
+//------------------ init ptp ---------------------------------
 bool p2p=false;
 bool master=false;
 bool slave=true;
 
 l3PTP ptp(master,slave,p2p);
+
 
 void setup() {
   AudioMemory_F32(50);
@@ -119,15 +114,6 @@ void setup() {
   ptpUdp.beginMulticast(IPAddress(224, 0, 1, 129), 319);  // 🔥 Important pour recevoir le multicast PTP
 
   Serial.println("Done setup");
-
-    // Setup networking
-  //qindesign::network::Ethernet.setHostname("t41ptpslave");
-  //qindesign::network::Ethernet.macAddress(mac);
-  //qindesign::network::Ethernet.begin(staticIP, subnetMask, gateway);
-  //qindesign::network::EthernetIEEE1588.begin();
-  ptp.begin();
-    
-
 }
 
 #define EVERY 1000
@@ -144,7 +130,6 @@ void loop() {
     printActiveSubs();
     timer1 = millis();
   }
-
 
     // ⏱ Lecture du timer IEEE1588 toutes les 2 secondes
   if (timerPrint1588 > 500) {
@@ -174,7 +159,6 @@ void loop() {
   }
 
   //checkPTP(); // Vérifie les trames PTP
-    ptp.update();
 
   delay(100); // pour laisser QNEthernet fonctionner correctement
 }

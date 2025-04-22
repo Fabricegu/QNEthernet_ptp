@@ -686,6 +686,15 @@ static inline void update_bufdesc(volatile enetbufferdesc_t *const pBD,
                 kEnetTxBdLast                 |
                 kEnetTxBdReady;
 
+  //MODIFICATION IEEE1588
+  if (doTimestampNext) {
+    doTimestampNext = false;
+    pBD->extend1 |= kEnetTxBdTimestamp;    // Demande un horodatage
+  } else {
+    pBD->extend1 &= ~kEnetTxBdTimestamp;   // S'assure qu'on ne demande pas
+  }
+  //FIN MODIFICATION IEEE1588
+
   ENET_TDAR = ENET_TDAR_TDAR;
 
   if (pBD->status & kEnetTxBdWrap) {

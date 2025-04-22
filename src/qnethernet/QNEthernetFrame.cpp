@@ -55,14 +55,30 @@ err_t EthernetFrameClass::recvFunc(struct pbuf *const p,
   Frame &frame = EthernetFrame.inBuf_[EthernetFrame.inBufHead_];
   frame.data.clear();
   frame.data.reserve(p->tot_len);
+
   // TODO: Limit vector size
+
+  bool first = true;
   while (pNext != nullptr) {
+
+    // DEBUT DE MODIFICATION IEEE 1588
+        // Capture timestamp uniquement sur le premier pbuf
+    if (first) {
+      frame.hasTimestamp = pNext->timestampValid;
+      if (frame.hasTimestamp) {
+        frame.timestamp = pNext->timestamp;
+      } 
+      first = false;
+    }
+    // FIN DE MODIFICATION IEEE 1588
+
     uint8_t *const data = static_cast<uint8_t *>(pNext->payload);
     frame.data.insert(frame.data.cend(), &data[0], &data[pNext->len]);
     pNext = pNext->next;
   }
-  frame.receivedTimestamp = timestamp;
+  //frame.receivedTimestamp = timestamp;
 
+  // Gestion du buffer circulaire
   // Increment the size
   if (EthernetFrame.inBufSize_ != 0 &&
       EthernetFrame.inBufTail_ == EthernetFrame.inBufHead_) {
@@ -98,7 +114,9 @@ FLASHMEM EthernetFrameClass::EthernetFrameClass()
 
 void EthernetFrameClass::Frame::clear() {
   data.clear();
-  receivedTimestamp = 0;
+  // DEBUT MODIF IEEE 1588
+  //receivedTimestamp = 0;
+  // FIN MODIF IEEE 1588
 }
 
 void EthernetFrameClass::clear() {
@@ -235,6 +253,15 @@ void EthernetFrameClass::setReceiveQueueCapacity(const size_t capacity) {
   qnethernet_hal_enable_interrupts();
 
   inBuf_.shrink_to_fit();
+}
+
+bool EthernetFrameClass::timestamp(timespec &timestamp) const {
+  // NOTE: This is not "concurrent safe"
+  if (frame_.hasTimestamp) {
+    timestamp = frame_.timestamp;
+    return true;
+  }
+  return false;
 }
 
 // --------------------------------------------------------------------------

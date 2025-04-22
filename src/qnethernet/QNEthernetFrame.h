@@ -150,9 +150,13 @@ class EthernetFrameClass final : public Stream, public internal::PrintfChecked {
   // This is useful in the case where frames have been queued and the caller
   // needs the approximate arrival time. Frames are timestamped when the unknown
   // ethernet protocol receive callback is called.
+
+  // DEBBUT MODIFICATION IEEE 1588
   uint32_t receivedTimestamp() const {
-    return frame_.receivedTimestamp;
+    //return frame_.receivedTimestamp;
+    return false;
   }
+  // FIN MODIFICATION IEEE 1588
 
   // Returns a pointer to the destination MAC. This is only valid if a frame has
   // been received with parseFrame() or has had this value written.
@@ -218,10 +222,17 @@ class EthernetFrameClass final : public Stream, public internal::PrintfChecked {
   // Clears any outgoing packet and the incoming queue.
   void clear();
 
+  //DEFINE MODIFICATION IEEE 1588
+  bool timestamp(timespec &timestamp) const;
+  //FIN MODIFICATION IEEE 1588
+
  private:
   struct Frame final {
     std::vector<uint8_t> data{};
-    volatile uint32_t receivedTimestamp = 0;  // Approximate arrival time
+    // DEFINE MODIFICATION IEEE 1588
+    //volatile uint32_t receivedTimestamp = 0;  // Approximate arrival time
+    volatile bool hasTimestamp = false;
+    timespec timestamp{0, 0};
 
     // Clears all the data.
     void clear();
